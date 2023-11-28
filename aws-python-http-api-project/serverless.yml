@@ -1,0 +1,46 @@
+service: aws-python-http-api-project
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: python3.9
+  stage: ${opt:stage, 'dev'}
+  
+plugins:
+- serverless-python-requirements
+
+package:
+  excludeDevDependencies: true
+  individually: true
+  patterns:
+    - '!node_modules/**'
+    - '!.idea/**'
+    - '!.mypy_cache/**'
+    - '!venv/**'
+    - '!__pycache__/**'
+    - '!.vscode/**'
+
+custom:
+  custom:
+  mySqsName: ${self:provider.stage}-my-sqs
+  pythonRequirements:
+    dockerizePip: non-linux
+
+functions:
+  publisher:
+    handler: handler.process
+    events:
+      - httpApi:
+          path: /
+          method: get
+          
+          
+resources:
+  Resources:
+    MySQS:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:custom.mySqsName}
+        VisibilityTimeout: 30
+        
+
