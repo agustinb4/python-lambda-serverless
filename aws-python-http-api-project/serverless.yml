@@ -7,6 +7,8 @@ provider:
   stage: ${opt:stage, 'dev'}
   
 plugins:
+  - serverless-offline-sqs
+  - serverless-offline
   - serverless-python-requirements
 
 package:
@@ -21,18 +23,39 @@ package:
     - '!.vscode/**'
 
 custom:
-  custom:
+  serverless-offline-sqs:
+    autoCreate: false
+    apiVersion: '2012-11-05'
+    endpoint: http://0.0.0.0:9324
+    region: eu-east-1
+    accessKeyId: root
+    secretAccessKey: root
+    skipCacheInvalidation: false
+
+  serverless-offline:
+    useDocker: false
+    port: 3000
+
   mySqsName: ${self:provider.stage}-my-sqs
   pythonRequirements:
     dockerizePip: non-linux
 
 functions:
   publisher:
-    handler: handler.process
+    handler: publisher.process
     events:
       - httpApi:
           path: /
           method: get
+
+  consumer:
+    handler: consumer.process
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - MySQS
+              - Arn
           
           
 resources:
@@ -42,5 +65,3 @@ resources:
       Properties:
         QueueName: ${self:custom.mySqsName}
         VisibilityTimeout: 30
-        
-

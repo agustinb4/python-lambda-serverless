@@ -1,0 +1,34 @@
+version: "3.2"
+services:
+  elasticmq:
+    image: softwaremill/elasticmq-native
+    container_name: 'sls-elasticmq'
+    ports:
+        - 9324:9324
+        - 9325:9325
+    volumes:
+        - ./aws-local/elasticmq.conf:/opt/elasticmq.conf
+    networks:
+        - queuenetwork
+
+  localstack:
+    image: localstack/localstack:latest
+    ports:
+      - "4566-4597:4566-4597"
+      - "${PORT_WEB_UI-8080}:${PORT_WEB_UI-8080}"
+    environment:
+      - SERVICES=${SERVICES-s3 }
+      - DEBUG=${DEBUG- }
+      - DATA_DIR=${DATA_DIR- }
+      - PORT_WEB_UI=${PORT_WEB_UI- }
+      - LAMBDA_EXECUTOR=${LAMBDA_EXECUTOR- }
+      - KINESIS_ERROR_PROBABILITY=${KINESIS_ERROR_PROBABILITY- }
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
+      - "./aws-local:/docker-entrypoint-initaws.d"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+
+networks:
+  queuenetwork:
+    driver: bridge
